@@ -21,7 +21,7 @@ services:
     ports:
       - "8001:8000"
     environment:
-      - DATABASE_URL=postgresql://user:password@db:5431/llm_world_builder
+      - DATABASE_URL=postgresql+asyncpg://user:password@db:5432/llm_world_builder
     depends_on:
       - db
 

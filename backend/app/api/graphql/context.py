@@ -1,20 +1,17 @@
-from typing import Any, AsyncGenerator
-from sqlalchemy.ext.asyncio import AsyncSession
+from typing import AsyncGenerator
 from strawberry.fastapi import BaseContext
-from app.database import get_db
-from app.ai.service import AIService
-from app.config import settings
+from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import Depends
+from app.database import get_async_session
 
 
 class GraphQLContext(BaseContext):
-    def __init__(self, db: AsyncSession, ai_service: AIService):
+    def __init__(self, db: AsyncSession):
         super().__init__()
         self.db = db
-        self.ai_service = ai_service
 
 
 async def get_context(
-    db: AsyncSession = get_db(),
-) -> AsyncGenerator[GraphQLContext, Any]:
-    ai_service = AIService(settings.ANTHROPIC_API_KEY)
-    yield GraphQLContext(db=db, ai_service=ai_service)
+    db: AsyncSession = Depends(get_async_session),
+) -> GraphQLContext:
+    return GraphQLContext(db=db)

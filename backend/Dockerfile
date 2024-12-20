@@ -4,9 +4,11 @@ WORKDIR /app
 
 # Install poetry
 RUN pip install poetry
+ENV POETRY_VIRTUALENVS_IN_PROJECT=false
+ENV POETRY_VIRTUALENVS_CREATE=false
 
 # Copy poetry files
-COPY pyproject.toml poetry.lock* ./
+COPY pyproject.toml poetry.lock ./
 
 # Configure poetry to not create a virtual environment inside the container
 RUN poetry config virtualenvs.create false

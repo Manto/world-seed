@@ -14,7 +14,7 @@ from app.schemas.entity import (
     EntityUpdateInput,
     EntityTypeUpdateInput,
 )
-from app.ai.service import AIService
+from app.ai.service import get_ai_service
 
 
 @strawberry.type
@@ -85,13 +85,13 @@ class Mutation:
     @strawberry.mutation
     async def generate_and_update_entity(self, info: Info, entity_id: int) -> EntityGQL:
         db: Session = info.context["db"]
-        ai_service: AIService = info.context["ai_service"]
 
         entity = db.scalars(select(Entity).where(Entity.id == entity_id)).first()
         if not entity:
             raise ValueError(f"Entity with ID {entity_id} not found")
 
         # Generate new details
+        ai_service = get_ai_service()
         generated_details = await ai_service.generate_details(
             db=db,
             entity_id=entity_id,
