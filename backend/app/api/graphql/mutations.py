@@ -101,7 +101,7 @@ class Mutation:
         entity.attributes.update(generated_details)
         entity.updated_at = datetime.utcnow()
 
-        db.commit()
+        await db.commit()
         db.refresh(entity)
 
         return EntityGQL.from_db(entity)
@@ -120,16 +120,10 @@ class Mutation:
             raise ValueError(f"Entity type {input.name} already exists")
 
         # Create entity type
-        entity_type = EntityType(
-            name=input.name,
-            generation_template={
-                "fields": input.fields,
-                "system_prompt": input.system_prompt,
-            },
-        )
+        entity_type = EntityType(name=input.name, default_fields=input.defaultFields)
 
         db.add(entity_type)
-        db.commit()
+        await db.commit()
         db.refresh(entity_type)
 
         return EntityTypeGQL.from_db(entity_type)
@@ -148,15 +142,12 @@ class Mutation:
         if input.name is not None:
             entity_type.name = input.name
 
-        if input.fields is not None or input.system_prompt is not None:
-            template = entity_type.generation_template.copy()
-            if input.fields is not None:
-                template["fields"] = input.fields
-            if input.system_prompt is not None:
-                template["system_prompt"] = input.system_prompt
-            entity_type.generation_template = template
+        if input.name is not None:
+            entity_type.name = input.name
+        if input.default_fields is not None:
+            entity_type.default_fields = input.defaultFields
 
-        db.commit()
+        await db.commit()
         db.refresh(entity_type)
 
         return EntityTypeGQL.from_db(entity_type)

@@ -22,10 +22,6 @@ export function EntityForm({ entity, onClose }: EntityFormProps) {
         typeId: entity?.typeDef.id || '',  // UUID string
         description: entity?.description || '',
         attributes: entity?.attributes || {},
-        generationTemplate: entity?.generationTemplate || {
-            fields: [],
-            systemPrompt: ''
-        }
     });
 
     if (loading) return <EntityFormSkeleton />;
@@ -92,7 +88,8 @@ export function EntityForm({ entity, onClose }: EntityFormProps) {
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
-                            </Select>                        </div>
+                            </Select>
+                        </div>
                     )}
 
                     <div className="space-y-2">
@@ -124,24 +121,6 @@ export function EntityForm({ entity, onClose }: EntityFormProps) {
                                     />
                                 </div>
                             ))}
-                        </div>
-                    )}
-
-                    {entity && (
-                        <div className="space-y-2">
-                            <Label>Generation Template</Label>
-                            <Textarea
-                                value={formData.generationTemplate.systemPrompt}
-                                onChange={(e) => setFormData({
-                                    ...formData,
-                                    generationTemplate: {
-                                        ...formData.generationTemplate,
-                                        systemPrompt: e.target.value
-                                    }
-                                })}
-                                className="h-32"
-                                placeholder="Enter generation prompt..."
-                            />
                         </div>
                     )}
 
