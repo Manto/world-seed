@@ -33,14 +33,6 @@ class EntityType(Base):
     # Relationship
     entities: Mapped[List["Entity"]] = relationship(back_populates="type_def")
 
-    @staticmethod
-    def default_types() -> Dict[str, List[str]]:
-        return {
-            "Character": ["profession", "desires", "appearance", "personality"],
-            "Area": ["climate", "geography", "culture", "resources"],
-            "Location": ["purpose", "atmosphere", "notable_features", "history"],
-        }
-
 
 class Entity(Base):
     __tablename__ = "entities"
@@ -52,10 +44,13 @@ class Entity(Base):
     name: Mapped[str] = mapped_column(String)
     description: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     attributes: Mapped[Dict] = mapped_column(JSON, default=dict)
-    generation_template: Mapped[Dict] = mapped_column(JSON, default=dict)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(datetime.timezone.utc)
+    )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime,
+        default=lambda: datetime.now(datetime.timezone.utc),
+        onupdate=lambda: datetime.now(datetime.timezone.utc),
     )
 
     # Relationships

@@ -14,7 +14,7 @@ from app.schemas.entity import (
     EntityUpdateInput,
     EntityTypeUpdateInput,
 )
-from app.ai.service import get_ai_service
+from app.ai.service import generate_details
 
 
 @strawberry.type
@@ -91,10 +91,7 @@ class Mutation:
             raise ValueError(f"Entity with ID {entity_id} not found")
 
         # Generate new details
-        ai_service = get_ai_service()
-        generated_details = await ai_service.generate_details(
-            db=db,
-            entity_id=entity_id,
+        generated_details = await generate_details(
             name=entity.name,
             description=entity.description,
             existing_attributes=entity.attributes,
