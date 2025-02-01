@@ -1,6 +1,6 @@
-# LLM World Builder
+# World Seed
 
-AI assisted tool for world building
+World Seed is an AI-assisted tool for worldbuilding and storytelling. The system works with entities, which can be customized with any number of user-defined attributes. These attributes can either be manually entered by users or automatically generated. Users can then select multiple entities to create scenes, providing specific instructions for how they want the scene to unfold. The system can then analyze the entities' attributes, combined with user inputs, to generate possibilities for how the scene might play out.
 
 ## Getting Started
 
