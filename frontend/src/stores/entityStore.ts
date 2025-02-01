@@ -12,7 +12,6 @@ interface EntityState {
   entities: Entity[];
   entityTypes: EntityType[];
   loading: boolean;
-  error: string | null;
   searchQuery: string;
 
   // Fetch operations
@@ -37,56 +36,50 @@ export const useEntityStore = create<EntityState>((set, get) => ({
   entities: [],
   entityTypes: [],
   loading: false,
-  error: null,
   searchQuery: "",
 
   setSearchQuery: (query) => set({ searchQuery: query }),
   setError: (error) => set({ error }),
 
   fetchEntities: async () => {
-    set({ loading: true, error: null });
+    set({ loading: true });
     try {
       const data = await entityService.getEntities();
       set({ entities: data.entities, loading: false });
-    } catch (error) {
-      set({
-        error: error instanceof Error ? error.message : "An error occurred",
-        loading: false,
-      });
+    } finally {
+      set({ loading: false });
     }
   },
 
   fetchEntityTypes: async () => {
-    set({ loading: true, error: null });
+    set({ loading: true });
     try {
       const data = await entityService.getEntityTypes();
       set({ entityTypes: data.entityTypes, loading: false });
-    } catch (error) {
+    } finally {
       set({
-        error: error instanceof Error ? error.message : "An error occurred",
         loading: false,
       });
     }
   },
 
   createEntity: async (input) => {
-    set({ loading: true, error: null });
+    set({ loading: true });
     try {
       const data = await entityService.createEntity(input);
       set((state) => ({
         entities: [...state.entities, data.createEntity],
         loading: false,
       }));
-    } catch (error) {
+    } finally {
       set({
-        error: error instanceof Error ? error.message : "An error occurred",
         loading: false,
       });
     }
   },
 
   updateEntity: async (id: string, input) => {
-    set({ loading: true, error: null });
+    set({ loading: true });
     try {
       const data = await entityService.updateEntity(id, input);
       set((state) => ({
@@ -95,32 +88,30 @@ export const useEntityStore = create<EntityState>((set, get) => ({
         ),
         loading: false,
       }));
-    } catch (error) {
+    } finally {
       set({
-        error: error instanceof Error ? error.message : "An error occurred",
         loading: false,
       });
     }
   },
 
   createEntityType: async (input) => {
-    set({ loading: true, error: null });
+    set({ loading: true });
     try {
       const data = await entityService.createEntityType(input);
       set((state) => ({
         entityTypes: [...state.entityTypes, data.createEntityType],
         loading: false,
       }));
-    } catch (error) {
+    } finally {
       set({
-        error: error instanceof Error ? error.message : "An error occurred",
         loading: false,
       });
     }
   },
 
   updateEntityType: async (id: string, input) => {
-    set({ loading: true, error: null });
+    set({ loading: true });
     try {
       const data = await entityService.updateEntityType(id, input);
       set((state) => ({
@@ -129,16 +120,15 @@ export const useEntityStore = create<EntityState>((set, get) => ({
         ),
         loading: false,
       }));
-    } catch (error) {
+    } finally {
       set({
-        error: error instanceof Error ? error.message : "An error occurred",
         loading: false,
       });
     }
   },
 
   generateDetails: async (id: string) => {
-    set({ loading: true, error: null });
+    set({ loading: true });
     try {
       const data = await entityService.generateDetails(id);
       set((state) => ({
@@ -149,9 +139,8 @@ export const useEntityStore = create<EntityState>((set, get) => ({
         ),
         loading: false,
       }));
-    } catch (error) {
+    } finally {
       set({
-        error: error instanceof Error ? error.message : "An error occurred",
         loading: false,
       });
     }

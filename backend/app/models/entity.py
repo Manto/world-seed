@@ -1,12 +1,15 @@
 from typing import Dict, List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 from sqlalchemy import Column, String, DateTime, ForeignKey, JSON, Table
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship, Mapped, mapped_column
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship, Mapped, mapped_column, DeclarativeBase
+from sqlalchemy.ext.asyncio import AsyncAttrs
 
-Base = declarative_base()
+
+class Base(AsyncAttrs, DeclarativeBase):
+    pass
+
 
 # Association table for entity relationships
 entity_relationships = Table(
@@ -45,12 +48,10 @@ class Entity(Base):
     description: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     attributes: Mapped[Dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(datetime.timezone.utc)
+        DateTime, default=lambda: datetime.utcnow()
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime,
-        default=lambda: datetime.now(datetime.timezone.utc),
-        onupdate=lambda: datetime.now(datetime.timezone.utc),
+        DateTime, default=lambda: datetime.utcnow(), onupdate=lambda: datetime.utcnow()
     )
 
     # Relationships

@@ -1,9 +1,9 @@
-from typing import List, Optional
+from typing import List
 import strawberry
 from strawberry.types import Info
-from sqlalchemy import select
-from sqlalchemy.orm import Session
-from datetime import datetime
+from sqlalchemy import select, exists
+from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import datetime, timezone
 
 from app.models.entity import Entity, EntityType
 from app.schemas.entity import (
@@ -21,43 +21,46 @@ from app.ai.service import generate_details
 class Mutation:
     @strawberry.mutation
     async def create_entity(self, info: Info, input: EntityInput) -> EntityGQL:
-        db: Session = info.context["db"]
+        db: AsyncSession = info.context.db
 
         # Validate entity type exists
-        entity_type = db.scalars(
-            select(EntityType).where(EntityType.id == input.type_id)
-        ).first()
+        result = await db.execute(
+            select(EntityType).where(EntityType.id == input.typeId)
+        )
+        entity_type = result.scalar_one_or_none() is not None
         if not entity_type:
-            raise ValueError(f"Entity type with ID {input.type_id} not found")
+            raise ValueError(f"Entity type with ID {input.typeId} not found")
 
         # Create entity
         entity = Entity(
             name=input.name,
-            type_id=input.type_id,
+            type_id=input.typeId,
             description=input.description,
             attributes=input.attributes or {},
         )
 
         # Add parent relationships if specified
-        if input.parent_ids:
-            parents = db.scalars(
-                select(Entity).where(Entity.id.in_(input.parent_ids))
-            ).all()
-            entity.parents.extend(parents)
+        # if input.parentIds:
+        #     parents = await db.scalars(
+        #         select(Entity).where(Entity.id.in_(input.parentIds))
+        #     ).all()
+        #     entity.parents.extend(parents)
 
         db.add(entity)
-        db.commit()
-        db.refresh(entity)
+        await db.commit()
+        await db.refresh(entity)
 
-        return EntityGQL.from_db(entity)
+        return await EntityGQL.from_db(entity)
 
     @strawberry.mutation
     async def update_entity(
-        self, info: Info, id: int, input: EntityUpdateInput
+        self, info: Info, id: str, input: EntityUpdateInput
     ) -> EntityGQL:
-        db: Session = info.context["db"]
+        db: AsyncSession = info.context.db
 
-        entity = db.scalars(select(Entity).where(Entity.id == id)).first()
+        entity = (
+            await db.execute(select(Entity).where(Entity.id == id))
+        ).scalar_one_or_none()
         if not entity:
             raise ValueError(f"Entity with ID {id} not found")
 
@@ -67,55 +70,54 @@ class Mutation:
         if input.description is not None:
             entity.description = input.description
         if input.attributes is not None:
-            entity.attributes.update(input.attributes)
-
-        # Update parent relationships if specified
-        if input.parent_ids is not None:
-            parents = db.scalars(
-                select(Entity).where(Entity.id.in_(input.parent_ids))
-            ).all()
-            entity.parents = parents
+            # merge input.attributes and entity.attribuets as a new dict
+            entity.attributes = {**entity.attributes, **input.attributes}
 
         entity.updated_at = datetime.utcnow()
-        db.commit()
-        db.refresh(entity)
+        await db.commit()
+        await db.refresh(entity)
 
-        return EntityGQL.from_db(entity)
+        return await EntityGQL.from_db(entity)
 
     @strawberry.mutation
-    async def generate_and_update_entity(self, info: Info, entity_id: int) -> EntityGQL:
-        db: Session = info.context["db"]
+    async def generate_and_update_entity(self, info: Info, entity_id: str) -> EntityGQL:
+        db: AsyncSession = info.context.db
 
-        entity = db.scalars(select(Entity).where(Entity.id == entity_id)).first()
+        entity = (
+            await db.execute(select(Entity).where(Entity.id == entity_id))
+        ).scalar_one_or_none()
         if not entity:
             raise ValueError(f"Entity with ID {entity_id} not found")
 
         # Generate new details
         generated_details = await generate_details(
-            name=entity.name,
-            description=entity.description,
-            existing_attributes=entity.attributes,
+            entity_type=(await entity.awaitable_attrs.type_def).name,
+            entity_data={
+                **entity.attributes,
+                "name": entity.name,
+            },
+            prompt=entity.description,
         )
 
         # Update entity
-        entity.attributes.update(generated_details)
+        entity.attributes = {**entity.attributes, **generated_details}
         entity.updated_at = datetime.utcnow()
 
         await db.commit()
-        db.refresh(entity)
+        await db.refresh(entity)
 
-        return EntityGQL.from_db(entity)
+        return await EntityGQL.from_db(entity)
 
     @strawberry.mutation
     async def create_entity_type(
         self, info: Info, input: EntityTypeInput
     ) -> EntityTypeGQL:
-        db: Session = info.context["db"]
+        db: AsyncSession = info.context.db
 
-        # Check if type already exists
-        existing = db.scalars(
+        result = await db.execute(
             select(EntityType).where(EntityType.name == input.name)
-        ).first()
+        )
+        existing = result.scalar_one_or_none() is not None
         if existing:
             raise ValueError(f"Entity type {input.name} already exists")
 
@@ -124,17 +126,19 @@ class Mutation:
 
         db.add(entity_type)
         await db.commit()
-        db.refresh(entity_type)
+        await db.refresh(entity_type)
 
         return EntityTypeGQL.from_db(entity_type)
 
     @strawberry.mutation
     async def update_entity_type(
-        self, info: Info, id: int, input: EntityTypeUpdateInput
+        self, info: Info, id: str, input: EntityTypeUpdateInput
     ) -> EntityTypeGQL:
-        db: Session = info.context["db"]
+        db: AsyncSession = info.context.db
 
-        entity_type = db.scalars(select(EntityType).where(EntityType.id == id)).first()
+        entity_type = await db.scalars(
+            select(EntityType).where(EntityType.id == id)
+        ).first()
         if not entity_type:
             raise ValueError(f"Entity type with ID {id} not found")
 
@@ -148,15 +152,17 @@ class Mutation:
             entity_type.default_fields = input.defaultFields
 
         await db.commit()
-        db.refresh(entity_type)
+        await db.refresh(entity_type)
 
         return EntityTypeGQL.from_db(entity_type)
 
     @strawberry.mutation
-    async def delete_entity_type(self, info: Info, id: int) -> bool:
-        db: Session = info.context["db"]
+    async def delete_entity_type(self, info: Info, id: str) -> bool:
+        db: AsyncSession = info.context.db
 
-        entity_type = db.scalars(select(EntityType).where(EntityType.id == id)).first()
+        entity_type = await db.scalars(
+            select(EntityType).where(EntityType.id == id)
+        ).first()
         if not entity_type:
             raise ValueError(f"Entity type with ID {id} not found")
 
@@ -168,7 +174,7 @@ class Mutation:
         if has_entities:
             raise ValueError("Cannot delete entity type that has existing entities")
 
-        db.delete(entity_type)
-        db.commit()
+        await db.delete(entity_type)
+        await db.commit()
 
         return True

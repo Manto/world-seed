@@ -113,6 +113,7 @@ async def generate_entity_field(
     context = f"""
 For the {entity_type} described below, come up with ideas for their {field} using the following information.
 Give me just the idea, do not preface what you are writing or give me any title or heading.
+Keep response under 100 words. More details, less descriptive words.
 
 World setting:
 {WORLD_SETTING}
@@ -190,6 +191,7 @@ Guidance for filling out {entity_type} details:
             model_settings={"temperature": 0.8},
             deps=append_system_prompt,
         )
+        logfire.info("Result from AI generation: ", data=result.data)
         return result.data
     except Exception as e:
         raise ValueError(f"Failed to parse AI response: {e}")
@@ -200,10 +202,10 @@ if __name__ == "__main__":
     from pprint import pprint
 
     result = asyncio.run(
-        generate_details(
+        generate_details_by_field(
             entity_type="character",
             entity_data={"name": "Jason Hikaru"},
-            prompt="A hard-boiled detective who is down on his luck, but has a secret that could change everything.",
+            prompt="A hard-boiled software investigator who uses old-school methods in his post for a large consumer technology company to catch AI misuse and solve AI related accidents. He holds a secret that when found out, will change everything.",
         )
     )
     pprint(result)

@@ -24,14 +24,14 @@ export interface EntityInput {
   typeId: string; // UUID string
   description?: string | null;
   attributes?: Record<string, any>;
-  parentIds?: string[]; // UUID strings
+  // parentIds?: string[]; // UUID strings
 }
 
 export interface EntityUpdateInput {
   name?: string;
   description?: string | null;
   attributes?: Record<string, any>;
-  parentIds?: string[]; // UUID strings
+  // parentIds?: string[]; // UUID strings
 }
 
 export interface GetEntitiesData {
