@@ -1,20 +1,28 @@
-from pathlib import Path
-from pydantic_settings import BaseSettings
+from typing import Literal, Union
+import dotenv
+from pydantic_ai.models import KnownModelName
+from pydantic_settings import BaseSettings, SettingsConfigDict
+import logfire
+
+dotenv.load_dotenv()
+
+
+def scrubbing_callback(m: logfire.ScrubMatch):
+    return m.value
+
+
+logfire.configure(scrubbing=logfire.ScrubbingOptions(callback=scrubbing_callback))
 
 
 class Settings(BaseSettings):
-    DATABASE_URL: str = "sqlite:///./worldbuilding.db"
-    ANTHROPIC_API_KEY: str = ""
-    TOGETHER_API_KEY: str = ""
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
-    class Config:
-        env_file = ".env"
-        # Try multiple possible locations for .env file
-        env_file_paths = [
-            Path(".env"),  # Current directory
-            Path("../.env"),  # Parent directory
-            Path(__file__).parent.parent / ".env",  # Project root
-        ]
+    DATABASE_URL: str = "sqlite:///./worldbuilding.db"
+    USE_LOCAL_MODEL: bool = False
+    AI_MODEL: KnownModelName | str = ""
+    ANTHROPIC_API_KEY: str = ""
+    OPENAI_API_KEY: str = ""
+    TOGETHER_API_KEY: str = ""
 
 
 settings = Settings()

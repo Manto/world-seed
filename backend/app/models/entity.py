@@ -1,12 +1,15 @@
 from typing import Dict, List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 from sqlalchemy import Column, String, DateTime, ForeignKey, JSON, Table
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship, Mapped, mapped_column
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship, Mapped, mapped_column, DeclarativeBase
+from sqlalchemy.ext.asyncio import AsyncAttrs
 
-Base = declarative_base()
+
+class Base(AsyncAttrs, DeclarativeBase):
+    pass
+
 
 # Association table for entity relationships
 entity_relationships = Table(
@@ -33,14 +36,6 @@ class EntityType(Base):
     # Relationship
     entities: Mapped[List["Entity"]] = relationship(back_populates="type_def")
 
-    @staticmethod
-    def default_types() -> Dict[str, List[str]]:
-        return {
-            "Character": ["profession", "desires", "appearance", "personality"],
-            "Area": ["climate", "geography", "culture", "resources"],
-            "Location": ["purpose", "atmosphere", "notable_features", "history"],
-        }
-
 
 class Entity(Base):
     __tablename__ = "entities"
@@ -52,10 +47,11 @@ class Entity(Base):
     name: Mapped[str] = mapped_column(String)
     description: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     attributes: Mapped[Dict] = mapped_column(JSON, default=dict)
-    generation_template: Mapped[Dict] = mapped_column(JSON, default=dict)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.utcnow()
+    )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime, default=lambda: datetime.utcnow(), onupdate=lambda: datetime.utcnow()
     )
 
     # Relationships

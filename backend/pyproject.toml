@@ -4,6 +4,9 @@ version = "0.1.0"
 description = "LLM World Builder Backend"
 authors = ["Shawn Chiao <mantle@gmail.com>"]
 package-mode = false
+packages = [
+    { include = "app" },
+]
 
 [tool.isort]
 multi_line_output = 3
@@ -26,6 +29,9 @@ alembic = "^1.13.1"
 pydantic-settings = "^2.6.1"
 anthropic = "^0.40.0"
 asyncpg = "^0.30.0"
+greenlet = "^3.1.1"
+pydantic-ai = "^0.0.15"
+logfire = "^2.11.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.1.0"

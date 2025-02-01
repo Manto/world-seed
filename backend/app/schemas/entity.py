@@ -30,7 +30,6 @@ class EntityGQL:
     name: str
     description: Optional[str]
     attributes: strawberry.scalars.JSON
-    generationTemplate: GenerationTemplate
     typeDef: EntityTypeGQL
     createdAt: datetime
     updatedAt: datetime
@@ -38,28 +37,23 @@ class EntityGQL:
     parents: List["EntityGQL"]
 
     @classmethod
-    def from_db(cls, db_entity: Entity) -> "EntityGQL":
+    async def from_db(cls, db_entity: Entity) -> "EntityGQL":
         return cls(
             id=str(db_entity.id),
             name=db_entity.name,
             description=db_entity.description,
             attributes=db_entity.attributes,
-            generationTemplate=GenerationTemplate(
-                fields=db_entity.generation_template.get("fields", []),
-                systemPrompt=db_entity.generation_template.get("system_prompt", ""),
-            ),
-            typeDef=EntityTypeGQL.from_db(db_entity.type_def),
+            typeDef=EntityTypeGQL.from_db(await db_entity.awaitable_attrs.type_def),
             createdAt=db_entity.created_at,
             updatedAt=db_entity.updated_at,
-            children=[cls.from_db(child) for child in db_entity.children],
-            parents=[cls.from_db(parent) for parent in db_entity.parents],
+            children=[
+                cls.from_db(child) for child in await db_entity.awaitable_attrs.children
+            ],
+            parents=[
+                cls.from_db(parent)
+                for parent in await db_entity.awaitable_attrs.parents
+            ],
         )
-
-
-@strawberry.input
-class GenerationTemplateInput:
-    fields: List[str]
-    systemPrompt: str
 
 
 @strawberry.input
@@ -80,7 +74,6 @@ class EntityInput:
     typeId: str  # UUID as string
     description: Optional[str] = None
     attributes: Optional[strawberry.scalars.JSON] = None
-    generationTemplate: Optional[GenerationTemplateInput] = None
     parentIds: Optional[List[str]] = None  # UUIDs as strings
 
 
@@ -89,5 +82,4 @@ class EntityUpdateInput:
     name: Optional[str] = None
     description: Optional[str] = None
     attributes: Optional[strawberry.scalars.JSON] = None
-    generationTemplate: Optional[GenerationTemplateInput] = None
     parentIds: Optional[List[str]] = None  # UUIDs as strings
