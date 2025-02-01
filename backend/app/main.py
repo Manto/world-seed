@@ -14,7 +14,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Worldbuilding API", lifespan=lifespan)
+app = FastAPI(title="LLM World Builder API", lifespan=lifespan)
 
 # Add CORS middleware
 app.add_middleware(
