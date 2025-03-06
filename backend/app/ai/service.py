@@ -93,7 +93,9 @@ def get_model() -> str | Model:
         # For running a local OpenAI compatible inference server
         return OpenAIModel(
             settings.AI_MODEL,
-            base_url="http://localhost:1234/v1",
+            provider={
+                "base_url": "http://localhost:1234/v1"
+            }
         )
     else:
         return settings.AI_MODEL
